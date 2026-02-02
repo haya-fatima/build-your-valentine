@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Build Your Player 2 – Haya DLC</title>
+
+<style>
+body {
+  background:#0f172a;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
+}
+
+.card {
+  background:#16213e;
+  padding:15px;
+  margin:10px;
+  border-radius:10px;
+}
+
+button {
+  margin:6px;
+  padding:8px 12px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+
+.good { background:#ff8fab; }
+.bad  { background:#94a3b8; }
+.final { background:#ec4899; }
+.remove { background:#ef4444; color:white; }
+
+#shop { max-width:700px; margin:auto; }
+.hidden { display:none; }
+
+img.ending {
+  max-width: 260px;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.build-item {
+  background:#1e293b;
+  padding:6px;
+  margin:4px;
+  border-radius:6px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🎮 Build Your 4liferz Player 2 🎮</h1>
+
+<audio id="bgm" autoplay loop style="display:none">
+  <source src="music.mp3" type="audio/mpeg">
+</audio>
+
+<h2>Hearts Collected: <span id="money">0</span> 💗</h2>
+
+<!-- NEW BUILD PANEL -->
+<div class="card">
+  <h3>Current Build</h3>
+  <div id="buildList"></div>
+</div>
+
+<div id="shop"></div>
+
+<button class="final" onclick="finish()">Build My Valentine</button>
+
+<div id="result" class="hidden card"></div>
+
+<script>
+const MAX_ITEMS = 6;
+
+const OPTIONS = {
+  "Personality": [
+    { name: "Yap Level Premium", value: 3 },
+    { name: "Emotional Intelligence", value: 4 },
+    { name: "Will Share Food", value: -2 },
+    { name: "Overthinks All Night", value: -3 }
+  ],
+
+  "Outfit": [
+    { name: "Hoodie Stealer", value: 2 },
+    { name: "Stardew Farmer Fit", value: 3 },
+    { name: "Goblin Pajamas", value: -1 }
+  ],
+
+  "Abilities": [
+    { name: "Always right", value: 4 },
+    { name: "Cooks better than Gordon Ramsay", value: 3 },
+    { name: "Argues but googles first", value: 2 }
+  ]
+};
+
+const ENDINGS = {
+  good: {
+    min: 12,
+    html: `
+      <h1>💗 ACHIEVEMENT UNLOCKED 💗</h1>
+      <h2>You are officially Haya’s Valentine.</h2>
+      <img class='ending' src='happy.jpeg'/>
+      <p>Patch 2.0: she now loves you more.</p>
+    `
+  },
+
+  neutral: {
+    min: 3,
+    html: `
+      <h1>NEUTRAL ROUTE</h1>
+      <img class='ending' src='neutral.jpeg'/>
+      <p>Haya: “You don’t even love me.” *shakes head*</p>
+    `
+  },
+
+  bad: {
+    min: -999,
+    html: `
+      <h1>BAD ENDING</h1>
+      <img class='ending' src='sad.jpeg'/>
+      <p>You were attacked by Moody Haya. Critical damage taken. Retreat and recover.</p>
+    `
+  }
+};
+
+let hearts = 0;
+let picked = [];
+
+function render(){
+  const shop = document.getElementById("shop");
+  shop.innerHTML = "";
+
+  for(const category in OPTIONS){
+    let card = `<div class='card'><h3>${category}</h3>`;
+
+    OPTIONS[category].forEach(opt => {
+      const style = opt.value >= 0 ? "good" : "bad";
+      const sign = opt.value > 0 ? "+" : "";
+
+      card += `
+        <button class='${style}'
+          onclick="select('${opt.name}', ${opt.value})">
+          ${opt.name} (${sign}${opt.value})
+        </button>`;
+    });
+
+    card += "</div>";
+    shop.innerHTML += card;
+  }
+}
+
+// ADD ITEM
+function select(name, value){
+  if(picked.length >= MAX_ITEMS){
+    alert("Max 6 items only bestie");
+    return;
+  }
+
+  if(picked.find(i => i.name === name)){
+    alert("Already in build");
+    return;
+  }
+
+  picked.push({name, value});
+  hearts += value;
+
+  update();
+  renderBuild();
+}
+
+// REMOVE ITEM
+function removeItem(name){
+  const item = picked.find(i => i.name === name);
+  if(!item) return;
+
+  hearts -= item.value;
+  picked = picked.filter(i => i.name !== name);
+
+  update();
+  renderBuild();
+}
+
+// SHOW BUILD LIST
+function renderBuild(){
+  const div = document.getElementById("buildList");
+  div.innerHTML = "";
+
+  picked.forEach(i => {
+    div.innerHTML += `
+      <div class="build-item">
+        ${i.name} (${i.value > 0 ? "+" : ""}${i.value})
+        <button class="remove" onclick="removeItem('${i.name}')">x</button>
+      </div>
+    `;
+  });
+}
+
+function update(){
+ document.getElementById("money").innerText = hearts;
+}
+
+function finish(){
+ document.getElementById("shop").classList.add("hidden");
+
+ let result = document.getElementById("result");
+ result.classList.remove("hidden");
+
+ let ending;
+ if(hearts >= ENDINGS.good.min) ending = ENDINGS.good;
+ else if(hearts >= ENDINGS.neutral.min) ending = ENDINGS.neutral;
+ else ending = ENDINGS.bad;
+
+ result.innerHTML = ending.html;
+}
+
+render();
+update();
+</script>
+
+</body>
+</html>
