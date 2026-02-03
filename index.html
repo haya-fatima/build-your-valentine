@@ -188,7 +188,7 @@ body.bad-ending {
 <div id="mainGame">
   <h1>🎮 Build Your 4liferz Player 2 🎮</h1>
 
-  <audio id="bgm" autoplay loop style="display:none">
+  <audio id="bgm" loop style="display:none">
     <source src="music.mp3" type="audio/mpeg">
   </audio>
 
@@ -383,6 +383,17 @@ function finish(){
 }
 
 render(); update();
+
+const bgm = document.getElementById('bgm');
+
+function playBGMOnce() {
+  bgm.play().catch(err => console.log("Autoplay blocked, waiting for interaction:", err));
+  document.removeEventListener('click', playBGMOnce);
+}
+
+// Listen for any click or key press
+document.addEventListener('click', playBGMOnce, { once: true });
+document.addEventListener('keydown', playBGMOnce, { once: true });
 </script>
 
 </body>
