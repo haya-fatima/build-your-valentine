@@ -10,6 +10,9 @@ body {
   color:#fff;
   font-family:Arial;
   text-align:center;
+  transition: background 0.8s ease;
+  position: relative;
+  overflow-x: hidden;
 }
 
 .card {
@@ -25,20 +28,25 @@ button {
   border:none;
   border-radius:6px;
   cursor:pointer;
+  transition: transform 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
 }
 
 .good { background:#ff8fab; }
 .bad  { background:#94a3b8; }
-.final { background:#ec4899; }
+.final { background:#ec4899; font-size: 18px; padding: 12px 24px; }
 .remove { background:#ef4444; color:white; }
 
 #shop { max-width:700px; margin:auto; }
-.hidden { display:none; }
 
 img.ending {
   max-width: 260px;
   border-radius: 12px;
   margin-top: 10px;
+  animation: fadeInScale 1s ease;
 }
 
 .build-item {
@@ -47,52 +55,194 @@ img.ending {
   margin:4px;
   border-radius:6px;
 }
+
+/* ENDING PAGE STYLES */
+#endingPage {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: none; /* hide by default */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none; /* prevent click blocking while hidden */
+}
+
+/* BACKGROUND COLORS FOR ENDINGS */
+body.good-ending {
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+}
+
+body.neutral-ending {
+  background: linear-gradient(135deg, #636e72 0%, #2d3436 100%);
+}
+
+body.bad-ending {
+  background: linear-gradient(135deg, #2c3e50 0%, #000000 100%);
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(50px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ending-title {
+  font-size: 3em;
+  margin: 20px;
+  animation: slideUp 1s ease 0.3s backwards;
+  text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+}
+
+.ending-subtitle {
+  font-size: 1.5em;
+  margin: 15px;
+  animation: slideUp 1s ease 0.6s backwards;
+}
+
+.ending-text {
+  font-size: 1.2em;
+  margin: 15px;
+  animation: slideUp 1s ease 0.9s backwards;
+}
+
+/* HEARTS FALLING EFFECT */
+.heart {
+  position: fixed;
+  font-size: 30px;
+  animation: fall linear forwards;
+  z-index: 999;
+  pointer-events: none;
+}
+
+@keyframes fall {
+  to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+/* RAIN EFFECT */
+.raindrop {
+  position: fixed;
+  width: 2px;
+  height: 30px;
+  background: linear-gradient(to bottom, transparent, #4a90e2);
+  animation: rain linear forwards;
+  z-index: 999;
+  pointer-events: none;
+}
+
+@keyframes rain {
+  to { transform: translateY(100vh); opacity: 0; }
+}
+
+/* SPARKLE EFFECT */
+.sparkle {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  border-radius: 50%;
+  animation: sparkle 2s ease-in-out forwards;
+  z-index: 999;
+  pointer-events: none;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* GLITCH EFFECT */
+.glitch { animation: glitch 1s infinite; }
+
+@keyframes glitch {
+  0%,100%{ transform: translate(0); }
+  20%{ transform: translate(-2px,2px); }
+  40%{ transform: translate(-2px,-2px); }
+  60%{ transform: translate(2px,2px); }
+  80%{ transform: translate(2px,-2px); }
+}
+
+/* PULSE EFFECT */
+.pulse { animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.05);} }
+
 </style>
 </head>
 
 <body>
 
-<h1>🎮 Build Your 4liferz Player 2 🎮</h1>
+<div id="mainGame">
+  <h1>🎮 Build Your 4liferz Player 2 🎮</h1>
 
-<audio id="bgm" autoplay loop style="display:none">
-  <source src="music.mp3" type="audio/mpeg">
-</audio>
+  <audio id="bgm" autoplay loop style="display:none">
+    <source src="music.mp3" type="audio/mpeg">
+  </audio>
 
-<h2>Hearts Collected: <span id="money">0</span> 💗</h2>
+  <h2>Hearts Collected: <span id="money">0</span> 💗</h2>
 
-<!-- NEW BUILD PANEL -->
-<div class="card">
-  <h3>Current Build</h3>
-  <div id="buildList"></div>
+  <div class="card">
+    <h3>Current Build</h3>
+    <div id="buildList"></div>
+  </div>
+
+  <div id="shop"></div>
+
+  <button class="final" onclick="finish()">Build My Valentine</button>
 </div>
 
-<div id="shop"></div>
-
-<button class="final" onclick="finish()">Build My Valentine</button>
-
-<div id="result" class="hidden card"></div>
+<div id="endingPage"></div>
 
 <script>
 const MAX_ITEMS = 6;
 
 const OPTIONS = {
   "Personality": [
-    { name: "Yap Level Premium", value: 3 },
-    { name: "Emotional Intelligence", value: 4 },
-    { name: "Will Share Food", value: -2 },
-    { name: "Overthinks All Night", value: -3 }
+    { name: "Certified Yapaholic", value: 3 },
+    { name: "Emotional Support Legend", value: 4 },
+    { name: "Indian Meme Communicator", value: 2 },
+    { name: "Master of Overthinking (productive edition)", value: 3 },
+    { name: "Roasts but with Love", value: 2 },
+    { name: "Says 'It's fine' when not fine", value: -2 },
+    { name: "Overthinks in 4K Ultra HD", value: -3 },
+    { name: "Apology DLC missing + Drama DLC free", value: -2 },
+    { name: "Allergic to doing dishes", value: -3 },
+    { name: "Doesn't clean shower drain", value: -4 }
   ],
 
   "Outfit": [
-    { name: "Hoodie Stealer", value: 2 },
-    { name: "Stardew Farmer Fit", value: 3 },
-    { name: "Goblin Pajamas", value: -1 }
+    { name: "Husband's Hoodie Redistribution Specialist", value: 2 },
+    { name: "Sexy Lingeriee babyyy ;)", value: 4 },
+    { name: "Puffer Jacket Supremacy", value: 2 },
+    { name: "Cool Socks", value: 3 },
+    { name: "Sweaty Bra", value: -2 },
+    { name: "Fashionably Late", value: -2 },
+    { name: "Bad Hair Day Apocalypse", value: -4 },
+    { name: "Sweatpants All Day, Everyday", value: -3 }
   ],
 
   "Abilities": [
     { name: "Always right", value: 4 },
-    { name: "Cooks better than Gordon Ramsay", value: 3 },
-    { name: "Argues but googles first", value: 2 }
+    { name: "Can suck your soul out of you", value: 3 },
+    { name: "Pro Chef & Chocolate Connoisseur 🍫", value: 2 },
+    { name: "Smartestt in the WORLD", value: 3 },
+    { name: "Takes down enemies with a single stomach punch", value: -2 },
+    { name: "12 business days to get over ANYTHING", value: -4 },
+    { name: "Can't navigate to save your life", value: -4 },
+    { name: "Silent Treatment Expert", value: -3 },
   ]
 };
 
@@ -100,29 +250,32 @@ const ENDINGS = {
   good: {
     min: 12,
     html: `
-      <h1>💗 ACHIEVEMENT UNLOCKED 💗</h1>
-      <h2>You are officially Haya’s Valentine.</h2>
+      <div class="ending-title pulse">💗 ACHIEVEMENT UNLOCKED 💗</div>
+      <div class="ending-subtitle">You are officially Haya's Valentine.</div>
       <img class='ending' src='happy.jpeg'/>
-      <p>Patch 2.0: she now loves you more.</p>
-    `
+      <div class="ending-text">Patch 2.0: she now loves you more.</div>
+    `,
+    effect: 'hearts'
   },
 
   neutral: {
     min: 3,
     html: `
-      <h1>NEUTRAL ROUTE</h1>
+      <div class="ending-title">😐 NEUTRAL ROUTE 😐</div>
       <img class='ending' src='neutral.jpeg'/>
-      <p>Haya: “You don’t even love me.” *shakes head*</p>
-    `
+      <div class="ending-text">Haya: "You don't even love me." *shakes head*</div>
+    `,
+    effect: 'sparkles'
   },
 
   bad: {
     min: -999,
     html: `
-      <h1>BAD ENDING</h1>
+      <div class="ending-title glitch">💀 BAD ENDING 💀</div>
       <img class='ending' src='sad.jpeg'/>
-      <p>You were attacked by Moody Haya. Critical damage taken. Retreat and recover.</p>
-    `
+      <div class="ending-text">You were attacked by Moody Haya. Critical damage taken. Retreat and recover.</div>
+    `,
+    effect: 'rain'
   }
 };
 
@@ -135,89 +288,101 @@ function render(){
 
   for(const category in OPTIONS){
     let card = `<div class='card'><h3>${category}</h3>`;
-
     OPTIONS[category].forEach(opt => {
       const style = opt.value >= 0 ? "good" : "bad";
       const sign = opt.value > 0 ? "+" : "";
-
-      card += `
-        <button class='${style}'
-          onclick="select('${opt.name}', ${opt.value})">
-          ${opt.name} (${sign}${opt.value})
-        </button>`;
+      card += `<button class='${style}' onclick="select('${opt.name}', ${opt.value})">${opt.name} (${sign}${opt.value})</button>`;
     });
-
     card += "</div>";
     shop.innerHTML += card;
   }
 }
 
-// ADD ITEM
 function select(name, value){
-  if(picked.length >= MAX_ITEMS){
-    alert("Max 6 items only bestie");
-    return;
-  }
-
-  if(picked.find(i => i.name === name)){
-    alert("Already in build");
-    return;
-  }
-
-  picked.push({name, value});
+  if(picked.length >= MAX_ITEMS){ alert("Max 6 items only bestie"); return; }
+  if(picked.find(i => i.name === name)){ alert("Already in build"); return; }
+  picked.push({name,value});
   hearts += value;
-
   update();
   renderBuild();
 }
 
-// REMOVE ITEM
 function removeItem(name){
   const item = picked.find(i => i.name === name);
   if(!item) return;
-
   hearts -= item.value;
   picked = picked.filter(i => i.name !== name);
-
   update();
   renderBuild();
 }
 
-// SHOW BUILD LIST
 function renderBuild(){
   const div = document.getElementById("buildList");
   div.innerHTML = "";
-
   picked.forEach(i => {
-    div.innerHTML += `
-      <div class="build-item">
-        ${i.name} (${i.value > 0 ? "+" : ""}${i.value})
-        <button class="remove" onclick="removeItem('${i.name}')">x</button>
-      </div>
-    `;
+    div.innerHTML += `<div class="build-item">${i.name} (${i.value>0?"+":""}${i.value}) <button class="remove" onclick="removeItem('${i.name}')">x</button></div>`;
   });
 }
 
-function update(){
- document.getElementById("money").innerText = hearts;
+function update(){ document.getElementById("money").innerText = hearts; }
+
+function createHeartsRain(){
+  const interval = setInterval(()=>{
+    const heart = document.createElement('div');
+    heart.className='heart'; heart.textContent='💗';
+    heart.style.left=Math.random()*100+'%';
+    heart.style.animationDuration=(Math.random()*2+3)+'s';
+    heart.style.fontSize=(Math.random()*20+20)+'px';
+    document.body.appendChild(heart);
+    setTimeout(()=>heart.remove(),5000);
+  },200); setTimeout(()=>clearInterval(interval),10000);
+}
+
+function createRainEffect(){
+  const interval = setInterval(()=>{
+    const drop=document.createElement('div'); drop.className='raindrop';
+    drop.style.left=Math.random()*100+'%';
+    drop.style.animationDuration=(Math.random()*0.5+0.5)+'s';
+    document.body.appendChild(drop); setTimeout(()=>drop.remove(),2000);
+  },50); setTimeout(()=>clearInterval(interval),10000);
+}
+
+function createSparkles(){
+  const interval = setInterval(()=>{
+    const sparkle=document.createElement('div'); sparkle.className='sparkle';
+    sparkle.style.left=Math.random()*100+'%'; sparkle.style.top=Math.random()*100+'%';
+    document.body.appendChild(sparkle); setTimeout(()=>sparkle.remove(),2000);
+  },100); setTimeout(()=>clearInterval(interval),10000);
 }
 
 function finish(){
- document.getElementById("shop").classList.add("hidden");
+  const mainGame = document.getElementById("mainGame");
+  mainGame.style.display = "none";
+  // document.getElementById("mainGame").classList.add("hidden");
 
- let result = document.getElementById("result");
- result.classList.remove("hidden");
+  let ending; let endingType;
+  if(hearts>=ENDINGS.good.min){ ending=ENDINGS.good; endingType='good-ending'; }
+  else if(hearts>=ENDINGS.neutral.min){ ending=ENDINGS.neutral; endingType='neutral-ending'; }
+  else { ending=ENDINGS.bad; endingType='bad-ending'; }
 
- let ending;
- if(hearts >= ENDINGS.good.min) ending = ENDINGS.good;
- else if(hearts >= ENDINGS.neutral.min) ending = ENDINGS.neutral;
- else ending = ENDINGS.bad;
+  document.body.className=endingType;
 
- result.innerHTML = ending.html;
+  const endingPage = document.getElementById("endingPage");
+  endingPage.style.display='flex';
+  endingPage.style.pointerEvents='auto'; // allow clicks on ending if needed
+  endingPage.style.opacity=0;
+  endingPage.innerHTML=ending.html;
+
+  setTimeout(()=>{ endingPage.style.transition='opacity 1s'; endingPage.style.opacity=1; },50);
+
+  setTimeout(()=>{
+    if(ending.effect==='hearts') createHeartsRain();
+    else if(ending.effect==='rain') createRainEffect();
+    else if(ending.effect==='sparkles') createSparkles();
+  },500);
 }
 
-render();
-update();
+render(); update();
 </script>
 
 </body>
